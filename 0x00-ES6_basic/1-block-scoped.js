@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars */
-
 export default function taskBlock(trueOrFalse) {
-    const task = false;  // Uses const instead of var
-    const task2 = true;   // Uses const instead of var
+    const task = false;
+    const task2 = true;
   
     if (trueOrFalse) {
       const task = true;
