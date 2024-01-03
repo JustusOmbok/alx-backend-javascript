@@ -25,5 +25,11 @@ export default function createIteratorObject(report) {
     },
   };
 
-  return iterator;
+  const iterable = {
+    [Symbol.iterator]() {
+      return iterator;
+    },
+  };
+
+  return iterable;
 }
