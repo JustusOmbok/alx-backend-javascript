@@ -1,61 +1,119 @@
 const http = require('http');
 const fs = require('fs');
 
-const app = http.createServer((req, res) => {
-  const url = req.url;
+const PORT = 1245;
+const HOST = 'localhost';
+const app = http.createServer();
+const DB_FILE = process.argv.length > 2 ? process.argv[2] : '';
 
-  if (url === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Hello Holberton School!');
-  } else if (url === '/students') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    countStudents(process.argv[2])
-      .then((output) => {
-        res.end(output);
-      })
-      .catch((error) => {
-        console.log(error);
-        res.end('Cannot load the database\n');
-      });
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not found\n');
+/**.
+ * @author Justus Ombok <https://github.com/JustusOmbok>
+ */
+const countStudents = (dataPath) => new Promise((resolve, reject) => {
+  if (!dataPath) {
+    reject(new Error('Cannot load the database'));
+  }
+  if (dataPath) {
+    fs.readFile(dataPath, (err, data) => {
+      if (err) {
+        reject(new Error('Cannot load the database'));
+      }
+      if (data) {
+        const reportParts = [];
+        const fileLines = data.toString('utf-8').trim().split('\n');
+        const studentGroups = {};
+        const dbFieldNames = fileLines[0].split(',');
+        const studentPropNames = dbFieldNames.slice(
+          0,
+          dbFieldNames.length - 1,
+        );
+
+        for (const line of fileLines.slice(1)) {
+          const studentRecord = line.split(',');
+          const studentPropValues = studentRecord.slice(
+            0,
+            studentRecord.length - 1,
+          );
+          const field = studentRecord[studentRecord.length - 1];
+          if (!Object.keys(studentGroups).includes(field)) {
+            studentGroups[field] = [];
+          }
+          const studentEntries = studentPropNames.map((propName, idx) => [
+            propName,
+            studentPropValues[idx],
+          ]);
+          studentGroups[field].push(Object.fromEntries(studentEntries));
+        }
+
+        const totalStudents = Object.values(studentGroups).reduce(
+          (pre, cur) => (pre || []).length + cur.length,
+        );
+        reportParts.push(`Number of students: ${totalStudents}`);
+        for (const [field, group] of Object.entries(studentGroups)) {
+          reportParts.push([
+            `Number of students in ${field}: ${group.length}.`,
+            'List:',
+            group.map((student) => student.firstname).join(', '),
+          ].join(' '));
+        }
+        resolve(reportParts.join('\n'));
+      }
+    });
   }
 });
 
-app.listen(1245);
+const SERVER_ROUTE_HANDLERS = [
+  {
+    route: '/',
+    handler(_, res) {
+      const responseText = 'Hello Holberton School!';
 
-function countStudents(path) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path, 'utf8', (err, data) => {
-      if (err) {
-        reject(new Error('Cannot load the database'));
-      } else {
-        const lines = data.trim().split('\n').filter(line => line.trim() !== ''); // Remove empty lines
-        const students = lines.map(line => line.split(','));
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Length', responseText.length);
+      res.statusCode = 200;
+      res.write(Buffer.from(responseText));
+      res.end();
+    },
+  },
+  {
+    route: '/students',
+    handler(_, res) {
+      const responseParts = ['This is the list of our students'];
 
-        const studentsCount = students.length - 1; // Subtract 1 to exclude header line
-        let output = `Number of students: ${studentsCount}\n`;
-
-        const fields = {};
-        students.forEach(student => {
-          const field = student[3];
-          if (field === 'field') return; // Skip the header line
-          if (field in fields) {
-            fields[field].push(student[0]);
-          } else {
-            fields[field] = [student[0]];
-          }
+      countStudents(DB_FILE)
+        .then((report) => {
+          responseParts.push(report);
+          const responseText = responseParts.join('\n');
+          res.setHeader('Content-Type', 'text/plain');
+          res.setHeader('Content-Length', responseText.length);
+          res.statusCode = 200;
+          res.write(Buffer.from(responseText));
+          res.end();
+        })
+        .catch((err) => {
+          responseParts.push(err instanceof Error ? err.message : err.toString());
+          const responseText = responseParts.join('\n');
+          res.setHeader('Content-Type', 'text/plain');
+          res.setHeader('Content-Length', responseText.length);
+          res.statusCode = 200;
+          res.write(Buffer.from(responseText));
+          res.end();
         });
+    },
+  },
+];
 
-        for (const field in fields) {
-          if (field !== '') { // Ensure that the field is not an empty string
-            output += `Number of students in ${field}: ${fields[field].length}. List: ${fields[field].join(', ')}\n`;
-          }
-        }
+app.on('request', (req, res) => {
+  for (const routeHandler of SERVER_ROUTE_HANDLERS) {
+    if (routeHandler.route === req.url) {
+      routeHandler.handler(req, res);
+      break;
+    }
+  }
+});
 
-        resolve(output);
-      }
-    });
-  });
-}
+app.listen(PORT, HOST, () => {
+  process.stdout.write(`Server listening at -> http://${HOST}:${PORT}\n`);
+});
+
+module.exports = app;
