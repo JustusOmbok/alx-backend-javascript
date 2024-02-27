@@ -6,9 +6,7 @@ const HOST = 'localhost';
 const app = http.createServer();
 const DB_FILE = process.argv.length > 2 ? process.argv[2] : '';
 
-/**.
- * @author Justus Ombok <https://github.com/JustusOmbok>
- */
+// @author Justus Ombok <https://github.com/JustusOmbok>
 const countStudents = (dataPath) => new Promise((resolve, reject) => {
   if (!dataPath) {
     reject(new Error('Cannot load the database'));
