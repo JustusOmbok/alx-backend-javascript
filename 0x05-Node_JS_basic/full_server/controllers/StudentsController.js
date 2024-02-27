@@ -1,4 +1,4 @@
-import readDatabase from '../utils.js';
+import readDatabase from '../utils';
 
 class StudentsController {
   static async getAllStudents(_, res) {
@@ -19,19 +19,22 @@ class StudentsController {
   }
 
   static async getAllStudentsByMajor(req, res) {
-  const { major } = req.params;
-  if (!['CS', 'SWE'].includes(major.toUpperCase())) {
-    return res.status(500).send('Major parameter must be CS or SWE');
-  }
+    const { major } = req.params;
+    if (!['CS', 'SWE'].includes(major.toUpperCase())) {
+      return res.status(500).send('Major parameter must be CS or SWE');
+    }
 
-  try {
-    const students = await readDatabase('./database.csv');
-    const names = students[major.toUpperCase()] || [];
-    const response = `List: ${names.join(', ')}`;
+    try {
+      const students = await readDatabase('./database.csv');
+      const names = students[major.toUpperCase()] || [];
+      const response = `List: ${names.join(', ')}`;
 
-    res.status(200).send(response);
-  } catch (error) {
-    return res.status(500).send(error.message || 'Cannot load the database');
+      res.status(200).send(response);
+      return response; // Add return statement here
+    } catch (error) {
+      res.status(500).send(error.message || 'Cannot load the database');
+      throw error; // Add throw statement here
+    }
   }
 }
 
