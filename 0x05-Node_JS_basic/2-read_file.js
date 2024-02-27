@@ -3,14 +3,14 @@ const fs = require('fs');
 function countStudents(path) {
   try {
     const data = fs.readFileSync(path, 'utf8');
-    const lines = data.trim().split('\n').filter(line => line.trim() !== ''); // Remove empty lines
-    const students = lines.map(line => line.split(','));
+    const lines = data.trim().split('\n').filter((line) => line.trim() !== ''); // Remove empty lines
+    const students = lines.map((line) => line.split(','));
 
     const studentsCount = students.length - 1;
     console.log(`Number of students: ${studentsCount}`);
 
     const fields = {};
-    students.forEach(student => {
+    students.forEach((student) => {
       const field = student[3];
       if (field === 'field') return; // Skip the header line
       if (field in fields) {
