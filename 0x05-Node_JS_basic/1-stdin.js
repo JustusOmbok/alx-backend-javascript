@@ -4,7 +4,9 @@ process.stdin.on('data', (data) => {
   const name = data.toString().trim();
   if (name) {
     process.stdout.write(`Your name is: ${name}\n`);
-    process.stdout.write('This important software is now closing\n');
-    process.exit(0);
   }
+});
+
+process.stdin.on('end', () =>{
+	process.stdout.write('This important software is now closing\n');
 });
