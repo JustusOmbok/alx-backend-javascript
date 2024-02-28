@@ -3,7 +3,8 @@ import readDatabase from '../utils';
 class StudentsController {
   static async getAllStudents(_, res) {
     try {
-      const students = await readDatabase('./database.csv');
+      const databaseFile = process.argv[2];
+      const students = await readDatabase(databaseFile);
       const response = ['This is the list of our students'];
 
       Object.entries(students)
@@ -13,8 +14,10 @@ class StudentsController {
         });
 
       res.status(200).send(response.join('\n'));
+      return response; // Add return statement here
     } catch (error) {
       res.status(500).send(error.message);
+      throw error; // Add throw statement here
     }
   }
 
@@ -25,7 +28,8 @@ class StudentsController {
     }
 
     try {
-      const students = await readDatabase('./database.csv');
+      const databaseFile = process.argv[2];
+      const students = await readDatabase(databaseFile);
       const names = students[major.toUpperCase()] || [];
       const response = `List: ${names.join(', ')}`;
 
